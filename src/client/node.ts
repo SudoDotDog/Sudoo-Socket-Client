@@ -101,7 +101,11 @@ export class SocketClientNode {
                     this._errorListeners.forEach((listener: ClientErrorHandler) => {
                         listener(error);
                     });
-                    this._connection.close();
+
+                    if (this._connection !== null) {
+                        this._connection.close();
+                        this._connection = null;
+                    }
                 });
 
                 this._connection = clientConnection;
