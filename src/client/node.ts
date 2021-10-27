@@ -6,7 +6,7 @@
 
 import { client as WebSocketClient, connection as WebSocketConnection, Message as WebSocketMessage } from "websocket";
 import { fixWebSocketUrl } from "../util/url";
-import { ClientCloseHandler, SocketClientOptions } from "./declare";
+import { ClientCloseHandler, ClientConnectHandler, SocketClientOptions } from "./declare";
 import { SocketClientMessageHandler } from "./message-handler";
 
 export class SocketClientNode {
@@ -22,6 +22,7 @@ export class SocketClientNode {
 
     private readonly _client: WebSocketClient;
 
+    private readonly _connectListeners: Set<ClientConnectHandler>;
     private readonly _closeListeners: Set<ClientCloseHandler>;
     private readonly _messageHandler: SocketClientMessageHandler;
 
@@ -34,6 +35,7 @@ export class SocketClientNode {
 
         this._client = new WebSocketClient();
 
+        this._connectListeners = new Set<ClientConnectHandler>();
         this._closeListeners = new Set();
         this._messageHandler = SocketClientMessageHandler.create();
     }
@@ -45,11 +47,45 @@ export class SocketClientNode {
         return this._messageHandler;
     }
 
+    public sendJSON<T = any>(data: T): boolean {
+
+        if (this._connection === null) {
+            return false;
+        }
+
+        this._connection.sendUTF(JSON.stringify(data));
+        return true;
+    }
+
+    public sendBuffer(buffer: Buffer): boolean {
+
+        if (this._connection === null) {
+            return false;
+        }
+
+        this._connection.sendBytes(buffer);
+        return true;
+    }
+
+    public sendUTF8(data: string): boolean {
+
+        if (this._connection === null) {
+            return false;
+        }
+
+        this._connection.sendUTF(data);
+        return true;
+    }
+
     public connect(): Promise<void> {
 
         return new Promise((resolve: () => void, reject: (error: Error) => void) => {
 
             this._client.on('connect', (connection: WebSocketConnection) => {
+
+                this._connectListeners.forEach((listener: ClientConnectHandler) => {
+                    listener();
+                });
 
                 connection.on('close', (code: number, reason: string) => {
 
@@ -63,10 +99,10 @@ export class SocketClientNode {
 
                     if (message.type === 'utf8') {
 
-                        this._messageHandler.sendUTF8Message(message.utf8Data);
+                        this._messageHandler.emitUTF8Message(message.utf8Data);
                     } else if (message.type === 'binary') {
 
-                        this._messageHandler.sendBufferMessage(message.binaryData);
+                        this._messageHandler.emitBufferMessage(message.binaryData);
                     }
                 });
 

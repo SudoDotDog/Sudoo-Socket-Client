@@ -24,7 +24,7 @@ export class SocketClientMessageHandler {
         this._bufferMessageListeners = new Set();
     }
 
-    public sendUTF8Message(message: string): this {
+    public emitUTF8Message(message: string): this {
 
         try {
 
@@ -43,7 +43,7 @@ export class SocketClientMessageHandler {
         return this;
     }
 
-    public sendBufferMessage(message: Buffer): this {
+    public emitBufferMessage(message: Buffer): this {
 
         this._bufferMessageListeners.forEach((listener: ClientBufferMessageHandler) => {
 

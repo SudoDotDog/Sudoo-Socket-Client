@@ -4,6 +4,7 @@
  * @description Declare
  */
 
+export type ClientConnectHandler = () => void;
 export type ClientCloseHandler = (code: number, reason: string) => void;
 
 export type ClientUTF8MessageHandler = (message: string) => void;
