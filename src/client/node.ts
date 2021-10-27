@@ -5,18 +5,20 @@
  */
 
 import { client as WebSocketClient, connection as WebSocketConnection, Message as WebSocketMessage } from "websocket";
-import { ClientBufferMessageHandler, ClientUTF8MessageHandler } from "..";
+import { ClientBufferMessageHandler, ClientUTF8MessageHandler, WebSocketClientOptions } from "..";
 import { ClientCloseHandler } from "./declare";
 
 export class SocketClientNode {
 
-    public static create(url: string): SocketClientNode {
+    public static create(url: string, options: WebSocketClientOptions = {}): SocketClientNode {
 
-        const client: SocketClientNode = new SocketClientNode(url);
+        const client: SocketClientNode = new SocketClientNode(url, options);
         return client;
     }
 
     private readonly _url: string;
+    private readonly _options: WebSocketClientOptions;
+
     private readonly _client: WebSocketClient;
 
     private readonly _closeListeners: Set<ClientCloseHandler>;
@@ -25,9 +27,11 @@ export class SocketClientNode {
 
     private _connection: WebSocketConnection | null = null;
 
-    private constructor(url: string) {
+    private constructor(url: string, options: WebSocketClientOptions) {
 
         this._url = url;
+        this._options = options;
+
         this._client = new WebSocketClient();
 
         this._closeListeners = new Set();
@@ -73,8 +77,16 @@ export class SocketClientNode {
                 reject(error);
             });
 
-            this._client.connect(this._url);
+            this._client.connect(this._url, this._options.protocol);
         });
+    }
+
+    public close(): this {
+
+        if (this._connection) {
+            this._connection.close();
+        }
+        return this;
     }
 
     public addCloseListener(listener: ClientCloseHandler): this {
