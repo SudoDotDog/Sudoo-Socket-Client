@@ -4,4 +4,6 @@
  * @description Index
  */
 
+export * from "./client/declare";
 export * from "./client/node";
+
