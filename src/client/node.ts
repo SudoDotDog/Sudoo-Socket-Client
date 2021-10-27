@@ -6,6 +6,7 @@
 
 import { client as WebSocketClient, connection as WebSocketConnection, Message as WebSocketMessage } from "websocket";
 import { fixWebSocketUrl } from "../util/url";
+import { SocketClientConnection } from "./connection";
 import { ClientCloseHandler, ClientConnectHandler, SocketClientOptions } from "./declare";
 import { SocketClientMessageHandler } from "./message-handler";
 
@@ -24,9 +25,11 @@ export class SocketClientNode {
 
     private readonly _connectListeners: Set<ClientConnectHandler>;
     private readonly _closeListeners: Set<ClientCloseHandler>;
-    private readonly _messageHandler: SocketClientMessageHandler;
 
-    private _connection: WebSocketConnection | null = null;
+    private readonly _defaultMessageHandler: SocketClientMessageHandler;
+    private readonly _messageHandlers: Set<SocketClientMessageHandler>;
+
+    private _connection: SocketClientConnection | null;
 
     private constructor(url: string, options: SocketClientOptions) {
 
@@ -37,44 +40,31 @@ export class SocketClientNode {
 
         this._connectListeners = new Set<ClientConnectHandler>();
         this._closeListeners = new Set();
-        this._messageHandler = SocketClientMessageHandler.create();
+
+        this._defaultMessageHandler = SocketClientMessageHandler.create();
+        this._messageHandlers = new Set();
+
+        this._connection = null;
     }
 
     public get isConnected(): boolean {
         return this._connection !== null;
     }
-    public get messageHandler(): SocketClientMessageHandler {
-        return this._messageHandler;
+    public get defaultMessageHandler(): SocketClientMessageHandler {
+        return this._defaultMessageHandler;
     }
 
-    public sendJSON<T = any>(data: T): boolean {
+    public getConnection(): SocketClientConnection | null {
 
-        if (this._connection === null) {
-            return false;
-        }
-
-        this._connection.sendUTF(JSON.stringify(data));
-        return true;
+        return this._connection;
     }
 
-    public sendBuffer(buffer: Buffer): boolean {
+    public ensureConnection(): SocketClientConnection {
 
         if (this._connection === null) {
-            return false;
+            throw new Error('[Sudoo-Socket-Client] Not Connected');
         }
-
-        this._connection.sendBytes(buffer);
-        return true;
-    }
-
-    public sendUTF8(data: string): boolean {
-
-        if (this._connection === null) {
-            return false;
-        }
-
-        this._connection.sendUTF(data);
-        return true;
+        return this._connection;
     }
 
     public connect(): Promise<void> {
@@ -99,14 +89,14 @@ export class SocketClientNode {
 
                     if (message.type === 'utf8') {
 
-                        this._messageHandler.emitUTF8Message(message.utf8Data);
+                        this._emitUTF8Message(message.utf8Data);
                     } else if (message.type === 'binary') {
 
-                        this._messageHandler.emitBufferMessage(message.binaryData);
+                        this._emitBufferMessage(message.binaryData);
                     }
                 });
 
-                this._connection = connection;
+                this._connection = SocketClientConnection.create(connection);
                 resolve();
             });
 
@@ -119,11 +109,35 @@ export class SocketClientNode {
         });
     }
 
-    public close(): this {
+    public addMessageHandler(handler: SocketClientMessageHandler): this {
+
+        this._messageHandlers.add(handler);
+        return this;
+    }
+
+    public removeMessageHandler(handler: SocketClientMessageHandler): this {
+
+        this._messageHandlers.delete(handler);
+        return this;
+    }
+
+    public close(code?: number, description?: string): this {
 
         if (this._connection) {
-            this._connection.close();
+            this._connection.close(code, description);
         }
+        return this;
+    }
+
+    public addConnectListener(listener: ClientConnectHandler): this {
+
+        this._connectListeners.add(listener);
+        return this;
+    }
+
+    public removeConnectListener(listener: ClientConnectHandler): this {
+
+        this._connectListeners.delete(listener);
         return this;
     }
 
@@ -137,5 +151,31 @@ export class SocketClientNode {
 
         this._closeListeners.delete(listener);
         return this;
+    }
+
+    private _emitUTF8Message(message: string): this {
+
+        const messageHandlers: SocketClientMessageHandler[] = this._getMessageHandlers();
+        for (const messageHandler of messageHandlers) {
+            messageHandler.emitUTF8Message(message);
+        }
+        return this;
+    }
+
+    private _emitBufferMessage(message: Buffer): this {
+
+        const messageHandlers: SocketClientMessageHandler[] = this._getMessageHandlers();
+        for (const messageHandler of messageHandlers) {
+            messageHandler.emitBufferMessage(message);
+        }
+        return this;
+    }
+
+    private _getMessageHandlers(): SocketClientMessageHandler[] {
+
+        return [
+            this._defaultMessageHandler,
+            ...this._messageHandlers,
+        ];
     }
 }

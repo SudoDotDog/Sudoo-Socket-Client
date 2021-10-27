@@ -10,7 +10,7 @@ import { SocketClientNode } from "../src";
 
     const socket: SocketClientNode = SocketClientNode.create('localhost:3000');
 
-    socket.messageHandler.addJSONMessageListener(console.log);
+    socket.defaultMessageHandler.addJSONMessageListener(console.log);
     try {
         await socket.connect();
     } catch (err) {
