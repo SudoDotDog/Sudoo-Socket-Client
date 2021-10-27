@@ -6,16 +6,14 @@
 
 import { SocketClientNode } from "../src";
 
-(async () => {
+(async (): Promise<void> => {
 
-    const socket: SocketClientNode = SocketClientNode.create('localhost:3000', {
-        // protocol: 'echo2',
-    })
+    const socket: SocketClientNode = SocketClientNode.create('localhost:3000');
 
     socket.messageHandler.addJSONMessageListener(console.log);
     try {
         await socket.connect();
     } catch (err) {
-        console.log(`ERROR CAUGHT: ${err}`);
+        console.log(`ERROR CAUGHT: ${err.toString()}`);
     }
 })();

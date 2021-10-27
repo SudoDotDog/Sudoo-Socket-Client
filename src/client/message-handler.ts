@@ -10,7 +10,7 @@ export class SocketClientMessageHandler {
 
     public static create(): SocketClientMessageHandler {
 
-        return new SocketClientMessageHandler;
+        return new SocketClientMessageHandler();
     }
 
     private readonly _utf8MessageListeners: Set<ClientUTF8MessageHandler>;
