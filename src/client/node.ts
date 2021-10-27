@@ -7,7 +7,7 @@
 import { client as WebSocketClient, connection as WebSocketConnection, Message as WebSocketMessage } from "websocket";
 import { fixWebSocketUrl } from "../util/url";
 import { SocketClientConnection } from "./connection";
-import { ClientCloseHandler, ClientConnectHandler, GetConnectionFunction, SocketClientOptions } from "./declare";
+import { ClientCloseHandler, ClientConnectHandler, ClientErrorHandler, GetConnectionFunction, SocketClientOptions } from "./declare";
 import { SocketClientMessageHandler } from "./message-handler";
 
 export class SocketClientNode {
@@ -24,6 +24,7 @@ export class SocketClientNode {
     private readonly _client: WebSocketClient;
 
     private readonly _connectListeners: Set<ClientConnectHandler>;
+    private readonly _errorListeners: Set<ClientErrorHandler>;
     private readonly _closeListeners: Set<ClientCloseHandler>;
 
     private readonly _defaultMessageHandler: SocketClientMessageHandler;
@@ -39,10 +40,11 @@ export class SocketClientNode {
         this._client = new WebSocketClient();
 
         this._connectListeners = new Set<ClientConnectHandler>();
-        this._closeListeners = new Set();
+        this._errorListeners = new Set<ClientErrorHandler>();
+        this._closeListeners = new Set<ClientCloseHandler>();
 
         this._defaultMessageHandler = SocketClientMessageHandler.create(this._createGetConnectionFunction());
-        this._messageHandlers = new Set();
+        this._messageHandlers = new Set<SocketClientMessageHandler>();
 
         this._connection = null;
     }
@@ -94,6 +96,14 @@ export class SocketClientNode {
                     }
                 });
 
+                connection.on('error', (error: Error) => {
+
+                    this._errorListeners.forEach((listener: ClientErrorHandler) => {
+                        listener(error);
+                    });
+                    this._connection.close();
+                });
+
                 this._connection = clientConnection;
 
                 this._connectListeners.forEach((listener: ClientConnectHandler) => {
@@ -142,6 +152,18 @@ export class SocketClientNode {
     public removeConnectListener(listener: ClientConnectHandler): this {
 
         this._connectListeners.delete(listener);
+        return this;
+    }
+
+    public addErrorListener(listener: ClientErrorHandler): this {
+
+        this._errorListeners.add(listener);
+        return this;
+    }
+
+    public removeErrorListener(listener: ClientErrorHandler): this {
+
+        this._errorListeners.delete(listener);
         return this;
     }
 
