@@ -73,9 +73,7 @@ export class SocketClientNode {
 
             this._client.on('connect', (connection: WebSocketConnection) => {
 
-                this._connectListeners.forEach((listener: ClientConnectHandler) => {
-                    listener();
-                });
+                const clientConnection: SocketClientConnection = SocketClientConnection.create(connection);
 
                 connection.on('close', (code: number, reason: string) => {
 
@@ -96,7 +94,12 @@ export class SocketClientNode {
                     }
                 });
 
-                this._connection = SocketClientConnection.create(connection);
+                this._connection = clientConnection;
+
+                this._connectListeners.forEach((listener: ClientConnectHandler) => {
+                    listener(clientConnection);
+                });
+
                 resolve();
             });
 

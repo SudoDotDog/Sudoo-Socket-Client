@@ -8,7 +8,7 @@ import { SocketClientConnection } from "./connection";
 
 export type GetConnectionFunction = () => SocketClientConnection;
 
-export type ClientConnectHandler = () => void;
+export type ClientConnectHandler = (connection: SocketClientConnection) => void;
 export type ClientCloseHandler = (code: number, reason: string) => void;
 
 export type ClientUTF8MessageHandler = (message: string, connection: SocketClientConnection) => void;
