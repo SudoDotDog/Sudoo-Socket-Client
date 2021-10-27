@@ -4,52 +4,60 @@
  * @description Message Handler
  */
 
-import { ClientBufferMessageHandler, ClientJSONMessageHandler, ClientUTF8MessageHandler } from "./declare";
+import { SocketClientConnection } from "./connection";
+import { ClientBufferMessageHandler, ClientJSONMessageHandler, ClientUTF8MessageHandler, GetConnectionFunction } from "./declare";
 
 export class SocketClientMessageHandler {
 
-    public static create(): SocketClientMessageHandler {
+    public static create(getConnectionFunction: GetConnectionFunction): SocketClientMessageHandler {
 
-        return new SocketClientMessageHandler();
+        return new SocketClientMessageHandler(getConnectionFunction);
     }
+
+    private readonly _getConnectionFunction: GetConnectionFunction;
 
     private readonly _utf8MessageListeners: Set<ClientUTF8MessageHandler>;
     private readonly _jsonMessageListeners: Set<ClientJSONMessageHandler>;
     private readonly _bufferMessageListeners: Set<ClientBufferMessageHandler>;
 
-    private constructor() {
+    private constructor(getConnectionFunction: GetConnectionFunction) {
+
+        this._getConnectionFunction = getConnectionFunction;
 
         this._utf8MessageListeners = new Set();
         this._jsonMessageListeners = new Set();
         this._bufferMessageListeners = new Set();
     }
 
-    public emitUTF8Message(message: string): this {
+    public emitUTF8Message(message: string): void {
 
+        // eslint-disable-next-line no-useless-catch
         try {
 
-            const parsed: string = JSON.parse(message);
-            this._jsonMessageListeners.forEach((listener: ClientJSONMessageHandler) => {
-
-                listener(parsed);
-            });
+            const connection: SocketClientConnection = this._getConnectionFunction();
+            this._emitUTF8OrJsonMessage(message, connection);
+            return;
         } catch (error) {
 
-            this._utf8MessageListeners.forEach((listener: ClientUTF8MessageHandler) => {
-
-                listener(message);
-            });
+            throw error;
         }
-        return this;
     }
 
-    public emitBufferMessage(message: Buffer): this {
+    public emitBufferMessage(message: Buffer): void {
 
-        this._bufferMessageListeners.forEach((listener: ClientBufferMessageHandler) => {
+        // eslint-disable-next-line no-useless-catch
+        try {
 
-            listener(message);
-        });
-        return this;
+            const connection: SocketClientConnection = this._getConnectionFunction();
+            this._bufferMessageListeners.forEach((listener: ClientBufferMessageHandler) => {
+
+                listener(message, connection);
+            });
+            return;
+        } catch (error) {
+
+            throw error;
+        }
     }
 
     public addUTF8MessageListener(listener: ClientUTF8MessageHandler): this {
@@ -85,6 +93,25 @@ export class SocketClientMessageHandler {
     public removeBufferMessageListener(listener: ClientBufferMessageHandler): this {
 
         this._bufferMessageListeners.delete(listener);
+        return this;
+    }
+
+    private _emitUTF8OrJsonMessage(message: string, connection: SocketClientConnection): this {
+
+        try {
+
+            const parsed: string = JSON.parse(message);
+            this._jsonMessageListeners.forEach((listener: ClientJSONMessageHandler) => {
+
+                listener(parsed, connection);
+            });
+        } catch (error) {
+
+            this._utf8MessageListeners.forEach((listener: ClientUTF8MessageHandler) => {
+
+                listener(message, connection);
+            });
+        }
         return this;
     }
 }

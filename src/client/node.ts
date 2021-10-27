@@ -7,7 +7,7 @@
 import { client as WebSocketClient, connection as WebSocketConnection, Message as WebSocketMessage } from "websocket";
 import { fixWebSocketUrl } from "../util/url";
 import { SocketClientConnection } from "./connection";
-import { ClientCloseHandler, ClientConnectHandler, SocketClientOptions } from "./declare";
+import { ClientCloseHandler, ClientConnectHandler, GetConnectionFunction, SocketClientOptions } from "./declare";
 import { SocketClientMessageHandler } from "./message-handler";
 
 export class SocketClientNode {
@@ -41,7 +41,7 @@ export class SocketClientNode {
         this._connectListeners = new Set<ClientConnectHandler>();
         this._closeListeners = new Set();
 
-        this._defaultMessageHandler = SocketClientMessageHandler.create();
+        this._defaultMessageHandler = SocketClientMessageHandler.create(this._createGetConnectionFunction());
         this._messageHandlers = new Set();
 
         this._connection = null;
@@ -109,10 +109,11 @@ export class SocketClientNode {
         });
     }
 
-    public addMessageHandler(handler: SocketClientMessageHandler): this {
+    public createAndGetMessageHandler(): SocketClientMessageHandler {
 
+        const handler: SocketClientMessageHandler = SocketClientMessageHandler.create(this._createGetConnectionFunction());
         this._messageHandlers.add(handler);
-        return this;
+        return handler;
     }
 
     public removeMessageHandler(handler: SocketClientMessageHandler): this {
@@ -177,5 +178,17 @@ export class SocketClientNode {
             this._defaultMessageHandler,
             ...this._messageHandlers,
         ];
+    }
+
+    private _createGetConnectionFunction(): GetConnectionFunction {
+
+        return (): SocketClientConnection => {
+
+            if (this._connection === null) {
+
+                throw new Error('[Sudoo-Socket-Client] Not Connected');
+            }
+            return this._connection;
+        };
     }
 }
