@@ -5,6 +5,7 @@
  */
 
 export * from "./client/declare";
+export * from "./client/message-handler";
 export * from "./client/node";
 export * from "./util/url";
 

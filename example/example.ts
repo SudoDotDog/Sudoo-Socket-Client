@@ -12,7 +12,7 @@ import { SocketClientNode } from "../src";
         // protocol: 'echo2',
     })
 
-    socket.addUTF8MessageListener(console.log);
+    socket.messageHandler.addJSONMessageListener(console.log);
     try {
         await socket.connect();
     } catch (err) {

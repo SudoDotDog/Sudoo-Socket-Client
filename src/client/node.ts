@@ -5,9 +5,9 @@
  */
 
 import { client as WebSocketClient, connection as WebSocketConnection, Message as WebSocketMessage } from "websocket";
-import { ClientBufferMessageHandler, ClientUTF8MessageHandler, SocketClientOptions } from "..";
 import { fixWebSocketUrl } from "../util/url";
-import { ClientCloseHandler } from "./declare";
+import { ClientCloseHandler, SocketClientOptions } from "./declare";
+import { SocketClientMessageHandler } from "./message-handler";
 
 export class SocketClientNode {
 
@@ -23,8 +23,7 @@ export class SocketClientNode {
     private readonly _client: WebSocketClient;
 
     private readonly _closeListeners: Set<ClientCloseHandler>;
-    private readonly _utf8MessageListeners: Set<ClientUTF8MessageHandler>;
-    private readonly _bufferMessageListeners: Set<ClientBufferMessageHandler>;
+    private readonly _messageHandler: SocketClientMessageHandler;
 
     private _connection: WebSocketConnection | null = null;
 
@@ -36,12 +35,14 @@ export class SocketClientNode {
         this._client = new WebSocketClient();
 
         this._closeListeners = new Set();
-        this._utf8MessageListeners = new Set();
-        this._bufferMessageListeners = new Set();
+        this._messageHandler = SocketClientMessageHandler.create();
     }
 
     public get isConnected(): boolean {
         return this._connection !== null;
+    }
+    public get messageHandler(): SocketClientMessageHandler {
+        return this._messageHandler;
     }
 
     public connect(): Promise<void> {
@@ -62,14 +63,10 @@ export class SocketClientNode {
 
                     if (message.type === 'utf8') {
 
-                        this._utf8MessageListeners.forEach((listener: ClientUTF8MessageHandler) => {
-                            listener(message.utf8Data);
-                        });
+                        this._messageHandler.sendUTF8Message(message.utf8Data);
                     } else if (message.type === 'binary') {
 
-                        this._bufferMessageListeners.forEach((listener: ClientBufferMessageHandler) => {
-                            listener(message.binaryData);
-                        });
+                        this._messageHandler.sendBufferMessage(message.binaryData);
                     }
                 });
 
@@ -103,30 +100,6 @@ export class SocketClientNode {
     public removeCloseListener(listener: ClientCloseHandler): this {
 
         this._closeListeners.delete(listener);
-        return this;
-    }
-
-    public addUTF8MessageListener(listener: ClientUTF8MessageHandler): this {
-
-        this._utf8MessageListeners.add(listener);
-        return this;
-    }
-
-    public removeUTF8MessageListener(listener: ClientUTF8MessageHandler): this {
-
-        this._utf8MessageListeners.delete(listener);
-        return this;
-    }
-
-    public addBufferMessageListener(listener: ClientBufferMessageHandler): this {
-
-        this._bufferMessageListeners.add(listener);
-        return this;
-    }
-
-    public removeBufferMessageListener(listener: ClientBufferMessageHandler): this {
-
-        this._bufferMessageListeners.delete(listener);
         return this;
     }
 }
