@@ -126,7 +126,7 @@ export class SocketClientNode {
             this._client.connect(
                 this._url,
                 this._options.protocol,
-                (null as any),
+                this._options.origin,
                 this._buildHeaders(),
             );
         });

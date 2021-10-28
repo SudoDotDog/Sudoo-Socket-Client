@@ -34,5 +34,6 @@ export type SocketClientAuthorizationOption = {
 export type SocketClientOptions = {
 
     readonly authorization?: SocketClientAuthorizationOption;
+    readonly origin?: string;
     readonly protocol?: string;
 };
