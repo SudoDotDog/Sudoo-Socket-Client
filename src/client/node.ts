@@ -122,7 +122,14 @@ export class SocketClientNode {
                 reject(error);
             });
 
-            this._client.connect(this._url, this._options.protocol);
+            this._client.connect(
+                this._url,
+                this._options.protocol,
+                (null as any),
+                {
+                    Authorization: "Test",
+                },
+            );
         });
     }
 

@@ -14,6 +14,6 @@ import { SocketClientNode } from "../src";
     try {
         await socket.connect();
     } catch (err) {
-        console.log(`ERROR CAUGHT: ${err.toString()}`);
+        console.log(`ERROR CAUGHT: ${String(err)}`);
     }
 })();
