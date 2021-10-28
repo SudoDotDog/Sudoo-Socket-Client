@@ -16,7 +16,23 @@ export type ClientUTF8MessageHandler = (message: string, connection: SocketClien
 export type ClientJSONMessageHandler<T = any> = (message: T, connection: SocketClientConnection) => void;
 export type ClientBufferMessageHandler = (message: Buffer, connection: SocketClientConnection) => void;
 
+export type SocketClientAuthorizationOption = {
+
+    readonly type: 'bearer';
+    readonly token: string;
+} | {
+
+    readonly type: 'basic';
+    readonly username: string;
+    readonly password: string;
+} | {
+
+    readonly type: 'plain';
+    readonly token: string;
+};
+
 export type SocketClientOptions = {
 
+    readonly authorization?: SocketClientAuthorizationOption;
     readonly protocol?: string;
 };
