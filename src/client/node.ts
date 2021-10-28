@@ -5,6 +5,7 @@
  */
 
 import { client as WebSocketClient, connection as WebSocketConnection, Message as WebSocketMessage } from "websocket";
+import { parseBasicAuthorizationToken } from "../util/authorization";
 import { fixWebSocketUrl } from "../util/url";
 import { SocketClientConnection } from "./connection";
 import { ClientCloseHandler, ClientConnectHandler, ClientErrorHandler, GetConnectionFunction, SocketClientOptions } from "./declare";
@@ -126,9 +127,7 @@ export class SocketClientNode {
                 this._url,
                 this._options.protocol,
                 (null as any),
-                {
-                    Authorization: "Test",
-                },
+                this._buildHeaders(),
             );
         });
     }
@@ -226,5 +225,36 @@ export class SocketClientNode {
             }
             return this._connection;
         };
+    }
+
+    private _buildHeaders(): Record<string, string> {
+
+        const headers: Record<string, string> = {};
+
+        if (typeof this._options.authorization !== 'undefined') {
+
+            switch (this._options.authorization.type) {
+
+                case 'basic': {
+
+                    headers.Authorization = `Basic ${parseBasicAuthorizationToken(
+                        this._options.authorization.username,
+                        this._options.authorization.password,
+                    )}`;
+                    break;
+                }
+                case 'bearer': {
+
+                    headers.Authorization = `Bearer ${this._options.authorization.token}`;
+                    break;
+                }
+                case 'plain': {
+
+                    headers.Authorization = `Plain ${this._options.authorization.token}`;
+                    break;
+                }
+            }
+        }
+        return headers;
     }
 }
