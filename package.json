@@ -16,6 +16,7 @@
   },
   "homepage": "https://github.com/SudoDotDog/Sudoo-Socket-Client#readme",
   "dependencies": {
+    "@sudoo/socket-util": "^1.0.0",
     "websocket": "^1.0.34"
   },
   "devDependencies": {
