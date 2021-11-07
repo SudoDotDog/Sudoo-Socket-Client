@@ -4,9 +4,8 @@
  * @description Node
  */
 
+import { encodeBasicAuthorizationTokenNode, fixWebSocketUrl } from "@sudoo/socket-util";
 import { client as WebSocketClient, connection as WebSocketConnection, Message as WebSocketMessage } from "websocket";
-import { parseBasicAuthorizationToken } from "../util/authorization";
-import { fixWebSocketUrl } from "../util/url";
 import { SocketClientConnection } from "./connection";
 import { ClientCloseHandler, ClientConnectHandler, ClientErrorHandler, GetConnectionFunction, SocketClientOptions } from "./declare";
 import { SocketClientMessageHandler } from "./message-handler";
@@ -237,7 +236,7 @@ export class SocketClientNode {
 
                 case 'basic': {
 
-                    headers.Authorization = `Basic ${parseBasicAuthorizationToken(
+                    headers.Authorization = `Basic ${encodeBasicAuthorizationTokenNode(
                         this._options.authorization.username,
                         this._options.authorization.password,
                     )}`;
