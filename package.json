@@ -23,7 +23,7 @@
     "@sudoo/build-utils": "^1.0.0",
     "@sudoo/license": "^1.1.0",
     "@sudoo/triforce": "^2.16.2",
-    "@types/websocket": "^1.0.4"
+    "@types/websocket": "^1.0.5"
   },
   "nyc": {
     "extension": [
