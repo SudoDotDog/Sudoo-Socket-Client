@@ -22,7 +22,7 @@
   "devDependencies": {
     "@sudoo/build-utils": "^1.0.0",
     "@sudoo/license": "^2.1.0",
-    "@sudoo/triforce": "^3.9.1",
+    "@sudoo/triforce": "^3.10.1",
     "@types/websocket": "^1.0.5"
   },
   "nyc": {
